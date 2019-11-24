@@ -33,7 +33,7 @@ class FocusNinjaControl
             homed = false;
         }
 
-        bool moving(){
+        bool isMoving(){
             return numberOfPulses > 0;
         }
 
