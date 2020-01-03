@@ -4,12 +4,31 @@
 FocusNinjaControl::FocusNinjaControl()
 {
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(PIN_ENDSTOP, INPUT_PULLDOWN);
+    pinMode(PIN_ENDSTOP, INPUT_PULLUP);
     pinMode(PIN_DIRECTION, OUTPUT);
     pinMode(PIN_STEP, OUTPUT);
     pinMode(PIN_CAMERA_RELEASE, OUTPUT);
+    pinMode(PIN_STATUS_LED, OUTPUT);
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
-    //homeCarriage();
+    homeCarriage();
+}
+
+void FocusNinjaControl::takePhotos(float startPos, float endPos, int steps){
+    if (!homed){
+        homeCarriage();
+        return;
+    }
+    stepCount = 0;
+    numberOfSteps = steps;
+    stepSizemm = (endPos - startPos)/numberOfSteps;
+    beginPosition = (startPos - position);
+    if (beginPosition < 0){
+        beginPosition = beginPosition * -1;
+        moveCarriage(beginPosition, BACKWARDS);
+    } else {
+        moveCarriage(beginPosition, FORWARDS);
+    }
+    photoState = STATE_TAKE_PHOTOS;
 }
 
 void FocusNinjaControl::moveCarriage(float millimeter, bool direction)
@@ -47,6 +66,24 @@ void FocusNinjaControl::releaseShutter()
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
 }
 
+void FocusNinjaControl::stateMachine(){
+    switch(photoState){
+        case STATE_TAKE_PHOTOS :
+            if (not isMoving()){ 
+                delayMicroseconds(500000);
+                releaseShutter();
+                delayMicroseconds(500000);
+                if (stepCount == numberOfSteps){
+                    photoState = STATE_IDLE;
+                } else {
+                    moveCarriage(stepSizemm, FORWARDS);
+                    stepCount += 1; 
+                }      
+            }
+            break;
+  }
+}
+
 void FocusNinjaControl::stop()
 {
     numberOfPulses = 0;
@@ -54,15 +91,21 @@ void FocusNinjaControl::stop()
     log("log Stopped.");
 }
 
+
 //This needs to be called from the loop
 void FocusNinjaControl::motorControl()
 {
-    if (!carriageDirection)
+    stateMachine();
+    if (numberOfPulses == 0)
     {
         // not moving in any direction
+        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(PIN_STATUS_LED, LOW);
         return;
     }
-
+    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(PIN_STATUS_LED, HIGH);
+    
     if (homed)
     {
         //Minumum position reached, stop moving
@@ -85,27 +128,27 @@ void FocusNinjaControl::motorControl()
             numberOfPulses -= 1;
         }
         position = position + (mmPerStep * carriageDirection);
-        reportPosition(position);
+        reportPosition();
         digitalWrite(PIN_STEP, HIGH);
         delayMicroseconds(pulseWidthMs);
         digitalWrite(PIN_STEP, LOW);
         delayMicroseconds(pulseWidthMs);
     }
-    //Read endstop en feedback to led
+
     bool endStop = digitalRead(PIN_ENDSTOP);
-    digitalWrite(LED_BUILTIN, endStop);
 
     //If homing, stop when endstop triggers
-    if ((endStop == HIGH) && !homed)
+    if ((endStop == LOW) && !homed)
     {
         homed = true;
         if (position)
         {
-            reportPosition(0);
+            reportPosition();
         }
         position = 0;
         numberOfPulses = 0;
         carriageDirection = 0;
+        reportPosition();
         log("log Homed.");
     }
 }
@@ -131,10 +174,10 @@ void FocusNinjaControl::log(const char *s)
     }
 }
 
-void FocusNinjaControl::reportPosition(float pos)
+void FocusNinjaControl::reportPosition()
 {
     char buf[32];
 
-    snprintf(buf, 32, "pos %f", pos);
+    snprintf(buf, 32, "pos %f", position);
     log(buf);
 }

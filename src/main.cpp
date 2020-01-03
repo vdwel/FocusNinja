@@ -17,8 +17,8 @@ int stepCount = 0;
 
 //const char *ssid = "FocusNinja";
 //const char *password = "FocusNinja";
-const char *ssid = "Beneden24";
-const char *password = "UgchelenOldebroek";
+const char *ssid = "GF_Guest";
+const char *password = "gevoelsfotografie";
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
@@ -61,6 +61,7 @@ void onWebSocketEvent(uint8_t client_num,
     Serial.printf("[%u] Connection from ", client_num);
     Serial.println(ip.toString());
     active_sockets[client_num] = 1;
+    focusNinja.reportPosition();
   }
   break;
 
@@ -81,6 +82,7 @@ void onWebSocketEvent(uint8_t client_num,
     {
       if (sscanf((char*)payload, "go %f %f %d", &beginPosition, &endPosition, &steps) == 3)
       {
+        focusNinja.takePhotos(beginPosition, endPosition, steps);
         Serial.printf("Go from %f to %f in %d steps.\r\n", beginPosition, endPosition, steps);
       }    
     }
