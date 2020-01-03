@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>FocusNinja</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script language="javascript" type="text/javascript">
+
+        var url = "ws://" + window.location.hostname + ":1337/";
+        var output;
+        var homeButton;
+        var goButton;
+        var stopButton;
+        var stepsInput;
+        var beginInput;
+        var endInput;
+        var markBeginButton;
+        var markEndButton;
+        var positionSpan;
+
+        function init() {
+            output = document.getElementById("output");
+            positionSpan = document.getElementById("position");
+
+            homeButton = document.getElementById("homeButton");
+            homeButton.onclick = onHomeButtonClicked;
+
+            goButton = document.getElementById("goButton");
+            goButton.onclick = onGoButtonClicked;
+
+            stopButton = document.getElementById("stopButton");
+            stopButton.onclick = onStopButtonClicked;
+
+            stepsInput = document.getElementById("stepsInput");
+            beginInput = document.getElementById("beginInput");
+            endInput = document.getElementById("endInput");
+
+            markBeginButton = document.getElementById("markBeginButton");
+            markBeginButton.onclick = onMarkBeginButtonClicked;
+
+            markEndButton = document.getElementById("markEndButton");
+            markEndButton.onclick = onMarkEndButtonClicked;
+
+
+            // Connect to WebSocket server
+            wsConnect(url);
+        }
+
+        function log(s) {
+            output.innerHTML = s;
+            console.log("Log: " + s);
+        }
+
+        // Call this to connect to the WebSocket server
+        function wsConnect(url) {
+
+            // Connect to WebSocket server
+            websocket = new WebSocket(url);
+
+            // Assign callbacks
+            websocket.onopen = function (evt) { onOpen(evt) };
+            websocket.onclose = function (evt) { onClose(evt) };
+            websocket.onmessage = function (evt) { onMessage(evt) };
+            websocket.onerror = function (evt) { onError(evt) };
+        }
+
+        // Called when a WebSocket connection is established with the server
+        function onOpen(evt) {
+
+            // Log connection state
+            log("Connected.");
+
+            // Enable buttons
+            homeButton.disabled = false;
+            goButton.disabled = false;
+            stopButton.disabled = false;
+        }
+
+        // Called when the WebSocket connection is closed
+        function onClose(evt) {
+
+            // Log disconnection state
+            log("Disconnected.");
+
+            // Disable buttons
+            homeButton.disabled = true;
+            goButton.disabled = true;
+            stopButton.disabled = true;
+
+            // Try to reconnect after a few seconds
+            setTimeout(function () { wsConnect(url) }, 2000);
+        }
+
+        // Called when a message is received from the server
+        function onMessage(evt) {
+
+            parts = evt.data.split(" ");
+            switch (parts[0]) {
+                case "log":
+                    output.innerHTML = evt.data.slice(4);
+                    console.log(evt.data.slice(4));
+                    break;
+                case "pos":
+                    position.innerHTML = evt.data.slice(4);
+                    break;
+                default:
+                    console.log("Unknown message: " + evt.data);
+            }
+        }
+
+        // Called when a WebSocket error occurs
+        function onError(evt) {
+            console.log("ERROR: " + evt.data);
+        }
+
+        function onHomeButtonClicked(evt) {
+            doSend("home");
+        }
+
+
+        function onGoButtonClicked(evt) {
+            try {
+                steps = parseInt(stepsInput.value);
+                console.log("Steps: " + steps);
+                if (isNaN(steps)) {
+                    log("Number of steps must be a number.");
+                    return;
+                }
+
+                beginPos = parseFloat(beginInput.value);
+                console.log("Begin: " + beginPos);
+                if (isNaN(beginPos)) {
+                    log("Begin position must be a number.");
+                    return;
+                }
+
+                endPos = parseFloat(endInput.value);
+                console.log("End: " + endPos);
+                if (isNaN(endPos)) {
+                    log("End position must be a number.");
+                    return;
+                }
+
+                doSend("go " + beginPos + " " + endPos + " " + steps);
+            }
+            catch (e) {
+                console.log(e.message);
+                console.log("Shots: " + shotsInput.value);
+                output.innerHTML = "Invalid value.";
+            }
+        }
+
+        function onStopButtonClicked(evt) {
+            doSend("stop");
+        }
+
+        function onMarkBeginButtonClicked(evt) {
+            console.log("Mark begin");
+            beginInput.value = positionSpan.innerHTML;
+        }
+
+        function onMarkEndButtonClicked(evt) {
+            console.log("Mark begin");
+            endInput.value = positionSpan.innerHTML;
+        }
+
+        // Sends a message to the server (and prints it to the console)
+        function doSend(message) {
+            console.log("Sending: " + message);
+            websocket.send(message);
+        }
+
+        // Call the init function as soon as the page loads
+        window.addEventListener("load", init, false);
+
+    </script>
+</head>
+
+<body>
+    <h2>FocusNinja</h2>
+    <div id="output"></div>
+    <div>Position: <span id="position">unknown</span></div>
+    <div id="stack">
+        <div id="stackButtons">
+            <button id="homeButton">Home</button>
+            <button id="goButton">Go</button>
+            <button id="stopButton">Stop</button>
+        </div>
+        <div>
+            <button id="markBeginButton">Begin here</button>
+            <button id="markEndButton">End here</button>
+        </div>
+        <div id="stackProperties">
+            <div><span>Begin: </span><input id="beginInput"></input></div>
+            <div><span>End: </span><input id="endInput"></input></div>
+            <div><span>Steps: </span><input id="stepsInput"></input>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
