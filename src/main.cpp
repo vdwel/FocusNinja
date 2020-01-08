@@ -15,10 +15,10 @@ float stepSizemm = 0.5;
 int numberOfSteps = 50;
 int stepCount = 0;
 
-//const char *ssid = "FocusNinja";
-//const char *password = "FocusNinja";
-const char *ssid = "GF_Guest";
-const char *password = "gevoelsfotografie";
+const char *ssid = "FocusNinja0001";
+const char *password = "FocusNinja";
+//const char *ssid = "GF_Guest";
+//const char *password = "gevoelsfotografie";
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
@@ -120,13 +120,14 @@ void onStyleRequest(AsyncWebServerRequest *request)
 
 void connectWifi()
 {
-  //WiFi.softAP(ssid, password);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
+  WiFi.softAP(ssid, password);
+  //WiFi.begin(ssid, password);
+  /* while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
-  }
+   }
+   */
   Serial.println(" started WiFi.");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
