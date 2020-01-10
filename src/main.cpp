@@ -12,6 +12,7 @@
 
 FocusNinjaControl focusNinja;
 int state = 0;
+uint64_t chipid=ESP.getEfuseMac();
 
 //Test parameters
 float startPosition = 20;
@@ -20,7 +21,8 @@ int numberOfSteps = 50;
 int stepCount = 0;
 
 #ifdef ACCESSPOINT_MODE
-  const char *ssid = "FocusNinja0001";
+  char ssid[20];
+  //const char *ssid = "FocusNinja0001";
   const char *password = "FocusNinja";
 #else
   const char *ssid = "GF_Guest";
@@ -201,6 +203,8 @@ void setup()
 {
   Serial.begin(115200);
   focusNinja.setLogger(&report);
+  sprintf(ssid,"FocusNinja-%4x",(uint32_t)chipid);
+
   if (!SPIFFS.begin(true))
   {
     Serial.println("Error mounting SPIFFS");
