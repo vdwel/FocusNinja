@@ -5,6 +5,7 @@
 #include <WebSocketsServer.h>
 #include "main.h"
 #include "FocusNinjaControl.h"
+#include <Update.h>
 
 FocusNinjaControl focusNinja;
 int state = 0;
@@ -44,7 +45,7 @@ void onWebSocketEvent(uint8_t client_num,
                       size_t length)
 {
   String command = String((char *)payload);
-  float beginPosition, endPosition;
+  float beginPosition, endPosition, jogSize;
   int steps;
 
   switch (type)
@@ -79,13 +80,30 @@ void onWebSocketEvent(uint8_t client_num,
     else if (command.startsWith("home"))
     {
       focusNinja.homeCarriage();
-    } else if (command.startsWith("go"))
+    } 
+    else if (command.startsWith("go"))
     {
       if (sscanf((char*)payload, "go %f %f %d", &beginPosition, &endPosition, &steps) == 3)
       {
         focusNinja.takePhotos(beginPosition, endPosition, steps);
         Serial.printf("Go from %f to %f in %d steps.\r\n", beginPosition, endPosition, steps);
       }    
+    }
+    else if (command.startsWith("jogsize"))
+    {
+      if (sscanf((char*)payload, "jogsize %f", &jogSize) == 1)
+      {
+        focusNinja.jogSize = jogSize;
+        Serial.printf("Setting jogSize to %f\r\n", jogSize);
+      }  
+    }
+    else if (command.startsWith("jogfw"))
+    {
+        focusNinja.moveCarriage(focusNinja.jogSize, FORWARDS);
+    }
+    else if (command.startsWith("jogbw"))
+    {
+        focusNinja.moveCarriage(focusNinja.jogSize, BACKWARDS);
     }
     break;
 
