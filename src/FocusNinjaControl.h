@@ -10,7 +10,7 @@
 #define MICROSTEPPING 4
 #define DEGREES_PER_STEP 1.8
 #define MILLIMETER_PER_ROTATION 2
-#define DEFAULT_SPEED 2  //omwentelingen per seconde
+#define DEFAULT_SPEED 3  //omwentelingen per seconde
 #define MAX_POSITION 130 //maximale positie in mm
 #define FORWARDS false
 #define BACKWARDS true
@@ -52,7 +52,7 @@ private:
     float mmPerStep = (2 * DEGREES_PER_STEP) / (360 * MICROSTEPPING);
     int carriageDirection = 0;
     int numberOfPulses = 0;
-    int pulseWidthMs = (1000000 / (2 * DEGREES_PER_STEP * 360 / DEGREES_PER_STEP)) / DEFAULT_SPEED;
+    int pulseWidthMs = 1000000/((360 / DEGREES_PER_STEP) * MICROSTEPPING * 2)/ DEFAULT_SPEED;
     void (*logger)(const char*) = 0;
 
     //Basic function to rotate the steppermotor

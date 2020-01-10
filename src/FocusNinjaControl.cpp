@@ -157,7 +157,8 @@ void FocusNinjaControl::motorControl()
 void FocusNinjaControl::rotateStepper(float degrees, int rotationSpeed, bool rotationDirection)
 {
     numberOfPulses = MICROSTEPPING * degrees / DEGREES_PER_STEP;
-    pulseWidthMs = (1000000 / (2 * DEGREES_PER_STEP * 360 / DEGREES_PER_STEP)) / rotationSpeed;
+    //pulseWidthMs = (1000000 / (2 * DEGREES_PER_STEP * 360 / DEGREES_PER_STEP)) / rotationSpeed;
+    pulseWidthMs = 1000000/((360 / DEGREES_PER_STEP) * MICROSTEPPING * 2)/rotationSpeed;
     digitalWrite(PIN_DIRECTION, rotationDirection);
 }
 

@@ -27,13 +27,14 @@ uint8_t active_sockets[256] = {0};
 
 void report(const char *buf)
 {
-  for (int i = 0; i < 256; i++)
+  //Commented out, because it slows the system down
+/*   for (int i = 0; i < 256; i++)
   {
     if (active_sockets[i])
     {
       webSocket.sendTXT(i, buf);
     }
-  }
+  }*/
 }
 
 // Callback: receiving any WebSocket message
