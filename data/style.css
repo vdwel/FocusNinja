@@ -1,3 +1,25 @@
-input {
-    background: yellow;
-}
+body {
+    text-align: center;
+    font-family: monaco, monospace;
+    font-size: 200%;
+  }
+  h1, h2 {
+    display: inline-block;
+    background: #fff;
+  }
+  
+  span {
+    background: #fff;
+  }
+  .button {
+    background-color: black;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 20px;
+  }
+  input{font-size: 100%; }
