@@ -7,6 +7,8 @@
 #include "FocusNinjaControl.h"
 #include <Update.h>
 
+//#define ACCESSPOINT_MODE
+
 FocusNinjaControl focusNinja;
 int state = 0;
 
@@ -16,10 +18,13 @@ float stepSizemm = 0.5;
 int numberOfSteps = 50;
 int stepCount = 0;
 
-const char *ssid = "FocusNinja0001";
-const char *password = "FocusNinja";
-//const char *ssid = "GF_Guest";
-//const char *password = "gevoelsfotografie";
+#ifdef ACCESSPOINT_MODE
+  const char *ssid = "FocusNinja0001";
+  const char *password = "FocusNinja";
+#else
+  const char *ssid = "GF_Guest";
+  const char *password = "gevoelsfotografie";
+#endif
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
@@ -137,16 +142,55 @@ void onStyleRequest(AsyncWebServerRequest *request)
   request->send(SPIFFS, "/style.css", "text/css");
 }
 
+void onUpdateRequest(AsyncWebServerRequest *request)
+{
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                 "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/update.html", "text/html");
+}
+
+void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
+  if (!index){
+    Serial.println("Update");
+    // if filename includes spiffs, update the spiffs partition
+    int cmd = (filename.indexOf("spiffs") > -1) ? U_SPIFFS : U_FLASH;
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
+      Update.printError(Serial);
+    }
+  }
+
+  if (Update.write(data, len) != len) {
+    Update.printError(Serial);
+  }
+
+  if (final) {
+    AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
+    response->addHeader("Refresh", "20");  
+    response->addHeader("Location", "/");
+    request->send(response);
+    if (!Update.end(true)){
+      Update.printError(Serial);
+    } else {
+      Serial.println("Update complete");
+      Serial.flush();
+      ESP.restart();
+    }
+  }
+}
+
 void connectWifi()
 {
+#ifdef ACCESSPOINT_MODE
   WiFi.softAP(ssid, password);
-  //WiFi.begin(ssid, password);
-  /* while (WiFi.status() != WL_CONNECTED)
+#else
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
-   }
-   */
+  }
+#endif
   Serial.println(" started WiFi.");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
@@ -164,6 +208,12 @@ void setup()
   webSocket.onEvent(onWebSocketEvent);
   server.on("/", onIndexRequest);
   server.on("/style.css", onStyleRequest);
+  server.on("/update.html", onUpdateRequest);
+  server.on("/doUpdate", HTTP_POST,
+    [](AsyncWebServerRequest *request) {},
+    [](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data,
+                  size_t len, bool final) {handleDoUpdate(request, filename, index, data, len, final);}
+  );
   server.begin();
   webSocket.begin();
 }
