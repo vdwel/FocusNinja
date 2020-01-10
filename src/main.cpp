@@ -6,8 +6,9 @@
 #include "main.h"
 #include "FocusNinjaControl.h"
 #include <Update.h>
+#include <ESPmDNS.h>
 
-//#define ACCESSPOINT_MODE
+#define ACCESSPOINT_MODE
 
 FocusNinjaControl focusNinja;
 int state = 0;
@@ -216,6 +217,7 @@ void setup()
   );
   server.begin();
   webSocket.begin();
+  MDNS.begin("focusninja");
 }
 
 void loop()
