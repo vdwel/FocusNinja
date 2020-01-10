@@ -9,6 +9,7 @@
 FocusNinjaControl focusNinja;
 int state = 0;
 
+// hallo ik ben een aarbei
 //Test parameters
 float startPosition = 20;
 float stepSizemm = 0.5;
