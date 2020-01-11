@@ -21,7 +21,7 @@ int numberOfSteps = 50;
 int stepCount = 0;
 
 #ifdef ACCESSPOINT_MODE
-  char ssid[20];
+  char ssid[19];
   //const char *ssid = "FocusNinja0001";
   const char *password = "FocusNinja";
 #else
@@ -226,6 +226,6 @@ void setup()
 
 void loop()
 {
-  webSocket.loop();
+  //webSocket.loop();
   focusNinja.motorControl();
 }
