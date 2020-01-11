@@ -36,14 +36,13 @@ uint8_t active_sockets[256] = {0};
 
 void report(const char *buf)
 {
-  //Commented out, because it slows the system down
-/*   for (int i = 0; i < 256; i++)
+  for (int i = 0; i < 256; i++)
   {
     if (active_sockets[i])
     {
       webSocket.sendTXT(i, buf);
     }
-  }*/
+  }
 }
 
 // Callback: receiving any WebSocket message
@@ -199,6 +198,20 @@ void connectWifi()
   Serial.println(WiFi.localIP());
 }
 
+//This loop runs on the second core
+void loop2(){
+  //report position every 0.5 seconds
+  delayMicroseconds(100000);
+  focusNinja.reportPosition();
+}
+
+void coreTask0(void * pvParameters){
+  while(true){
+    vTaskDelay(10);
+    loop2();
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -222,10 +235,21 @@ void setup()
   server.begin();
   webSocket.begin();
   MDNS.begin("focusninja");
+  
+  xTaskCreatePinnedToCore(
+                    coreTask0,   // Function to implement the task 
+                    "coreTask0", // Name of the task
+                    10000,      // Stack size in words
+                    NULL,       // Task input parameter
+                    0,          // Priority of the task
+                    NULL,       // Task handle.
+                    0);  // Core where the task should run
+
+  focusNinja.homeCarriage();
 }
 
 void loop()
 {
-  //webSocket.loop();
+  webSocket.loop();
   focusNinja.motorControl();
 }

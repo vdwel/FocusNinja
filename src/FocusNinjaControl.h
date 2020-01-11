@@ -10,7 +10,7 @@
 #define MICROSTEPPING 4
 #define DEGREES_PER_STEP 1.8
 #define MILLIMETER_PER_ROTATION 2
-#define DEFAULT_SPEED 3  //omwentelingen per seconde
+#define DEFAULT_SPEED 2  //omwentelingen per seconde
 #define MAX_POSITION 130 //maximale positie in mm
 #define FORWARDS false
 #define BACKWARDS true

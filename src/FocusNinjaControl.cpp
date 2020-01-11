@@ -10,7 +10,6 @@ FocusNinjaControl::FocusNinjaControl()
     pinMode(PIN_CAMERA_RELEASE, OUTPUT);
     pinMode(PIN_STATUS_LED, OUTPUT);
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
-    homeCarriage();
 }
 
 void FocusNinjaControl::takePhotos(float startPos, float endPos, int steps){
@@ -128,7 +127,7 @@ void FocusNinjaControl::motorControl()
             numberOfPulses -= 1;
         }
         position = position + (mmPerStep * carriageDirection);
-        reportPosition();
+        //reportPosition();
         digitalWrite(PIN_STEP, HIGH);
         delayMicroseconds(pulseWidthMs);
         digitalWrite(PIN_STEP, LOW);
@@ -141,10 +140,6 @@ void FocusNinjaControl::motorControl()
     if ((endStop == LOW) && !homed)
     {
         homed = true;
-        if (position)
-        {
-            reportPosition();
-        }
         position = 0;
         numberOfPulses = 0;
         carriageDirection = 0;
