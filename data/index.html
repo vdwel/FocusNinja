@@ -177,8 +177,8 @@
     </script>
 </head>
 
-<body>
-    <h2>FocusNinja</h2>
+<body></body>
+    <img class="img" src="ninja.png">
     <div id="output"></div>
     <div>Position: <span id="position">unknown</span></div>
     <div id="stack">
@@ -196,6 +196,16 @@
             <div><span>End: </span><input id="endInput"></input></div>
             <div><span>Steps: </span><input id="stepsInput"></input>
             </div>
+        <div id="stackButtons">
+            <button class="button" onclick="myFunction()">Toggle dark mode</button>
+
+            <script>
+                function myFunction() {
+                   var element = document.body;
+                   element.classList.toggle("dark-mode");
+                }
+            </script>
+        </div>
         </div>
     </div>
 </body>

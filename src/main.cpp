@@ -146,6 +146,9 @@ void setup()
   webSocket.onEvent(onWebSocketEvent);
   server.on("/", onIndexRequest);
   server.on("/style.css", onStyleRequest);
+  server.on("/ninja.png", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/ninja.png", "image/png");
+  });
   server.begin();
   webSocket.begin();
 }

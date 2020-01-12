@@ -2,19 +2,26 @@ body {
     text-align: center;
     font-family: monaco, monospace;
     font-size: 200%;
+    background: white;
   }
+
+  input{
+    font-size: 100%; 
+  }
+
   h1, h2 {
     display: inline-block;
-    background: #fff;
   }
   
+  /*
   span {
     background: #fff;
   }
-  .button {
-    background-color: black;
+  */
+
+  button {
+    color:white;
     border: none;
-    color: white;
     padding: 15px 32px;
     text-align: center;
     text-decoration: none;
@@ -22,4 +29,18 @@ body {
     font-size: 16px;
     border-radius: 20px;
   }
+
+  .img {
+    width: 50%;
+    height: 50%;
+    max-height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dark-mode {
+    background: black;
+    color: white;
+  }
+
   input{font-size: 100%; }
