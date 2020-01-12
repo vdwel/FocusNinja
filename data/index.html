@@ -177,8 +177,26 @@
     </script>
 </head>
 
-<body></body>
-    <img class="img" src="ninja.png">
+<body>
+
+    <div>
+    <nav role="navigation">
+        <div id="menuToggle">
+
+          <input type="checkbox" />
+          <span></span>
+          <span></span>
+          <span></span>
+          
+          <ul id="menu">
+            <a href="settings.html"><li>Settings</li></a>
+            <a href="update.html"><li>Update</li></a>
+          </ul>
+        </div>
+    </nav>
+    </div>
+    
+
     <div id="output"></div>
     <div>Position: <span id="position">unknown</span></div>
     <div id="stack">
@@ -203,6 +221,7 @@
                 function myFunction() {
                    var element = document.body;
                    element.classList.toggle("dark-mode");
+        
                 }
             </script>
         </div>
