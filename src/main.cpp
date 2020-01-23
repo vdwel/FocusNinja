@@ -112,6 +112,21 @@ void onWebSocketEvent(uint8_t client_num,
     {
         focusNinja.moveCarriage(focusNinja.jogSize, BACKWARDS);
     }
+    else if (command.startsWith("jog "))
+    {
+      if (sscanf((char*)payload, "jog %f", &jogSize) == 1)
+      {
+        if (jogSize < 0)
+        {
+          focusNinja.moveCarriage(-jogSize, BACKWARDS);
+        }
+        else
+        {
+          focusNinja.moveCarriage(jogSize, FORWARDS);
+        }
+        
+      }  
+    }
     break;
 
   // For everything else: do nothing
