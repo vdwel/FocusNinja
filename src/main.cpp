@@ -96,22 +96,6 @@ void onWebSocketEvent(uint8_t client_num,
         Serial.printf("Go from %f to %f in %d steps.\r\n", beginPosition, endPosition, steps);
       }    
     }
-    else if (command.startsWith("jogsize"))
-    {
-      if (sscanf((char*)payload, "jogsize %f", &jogSize) == 1)
-      {
-        focusNinja.jogSize = jogSize;
-        Serial.printf("Setting jogSize to %f\r\n", jogSize);
-      }  
-    }
-    else if (command.startsWith("jogfw"))
-    {
-        focusNinja.moveCarriage(focusNinja.jogSize, FORWARDS);
-    }
-    else if (command.startsWith("jogbw"))
-    {
-        focusNinja.moveCarriage(focusNinja.jogSize, BACKWARDS);
-    }
     else if (command.startsWith("jog "))
     {
       if (sscanf((char*)payload, "jog %f", &jogSize) == 1)
