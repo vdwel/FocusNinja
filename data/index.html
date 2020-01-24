@@ -18,6 +18,14 @@
         var markBeginButton;
         var markEndButton;
         var positionSpan;
+        var jog001Button;
+        var jog01Button;
+        var jog1Button;
+        var jog10Button;
+        var jogForwardButton;
+        var jogBackwardButton;
+        var selectedJogButton;
+        var jogSize;
 
         function init() {
             output = document.getElementById("output");
@@ -42,6 +50,28 @@
             markEndButton = document.getElementById("markEndButton");
             markEndButton.onclick = onMarkEndButtonClicked;
 
+            jog001Button = document.getElementById("jog001Button");
+            jog001Button.onclick = onJog001ButtonClicked;
+
+            jog01Button = document.getElementById("jog01Button");
+            jog01Button.onclick = onJog01ButtonClicked;
+
+            jog1Button = document.getElementById("jog1Button");
+            jog1Button.onclick = onJog1ButtonClicked;
+
+            jog10Button = document.getElementById("jog10Button");
+            jog10Button.onclick = onJog10ButtonClicked;
+
+            jogForwardButton = document.getElementById("jogForwardButton");
+            jogForwardButton.onclick = onJogForwardButtonClicked;
+
+            jogBackwardButton = document.getElementById("jogBackwardButton");
+            jogBackwardButton.onclick = onJogBackwardButtonClicked;
+
+            // default jog size is 1 mm
+            jogSize = 1.0;
+            selectedJogButton = jog1Button;
+            selectedJogButton.className = "button-selected";
 
             // Connect to WebSocket server
             wsConnect(url);
@@ -165,6 +195,42 @@
             endInput.value = positionSpan.innerHTML;
         }
 
+        function onJog001ButtonClicked(evt) {
+            selectedJogButton.className = "button";
+            selectedJogButton = jog001Button;
+            selectedJogButton.className = "button-selected";
+            jogSize = 0.01;
+        }
+
+        function onJog01ButtonClicked(evt) {
+            selectedJogButton.className = "button";
+            selectedJogButton = jog01Button;
+            selectedJogButton.className = "button-selected";
+            jogSize = 0.1;
+        }
+
+        function onJog1ButtonClicked(evt) {
+            selectedJogButton.className = "button";
+            selectedJogButton = jog1Button;
+            selectedJogButton.className = "button-selected";
+            jogSize = 1.0;
+        }
+
+        function onJog10ButtonClicked(evt) {
+            selectedJogButton.className = "button";
+            selectedJogButton = jog10Button;
+            selectedJogButton.className = "button-selected";
+            jogSize = 10.0;
+        }
+
+        function onJogBackwardButtonClicked(evt) {
+            doSend("jog " + (-jogSize));
+        }
+
+        function onJogForwardButtonClicked(evt) {
+            doSend("jog " + jogSize);
+        }
+
         // Sends a message to the server (and prints it to the console)
         function doSend(message) {
             console.log("Sending: " + message);
@@ -209,10 +275,20 @@
             <button class="button" id="markBeginButton">Begin here</button>
             <button class="button" id="markEndButton">End here</button>
         </div>
+        <div>
+            <button class="button" id="jog10Button"/><label for="jog10Button">10 mm</label>
+            <button class="button" id="jog1Button"/><label for="jog1Button">1 mm</label>
+            <button class="button" id="jog01Button"/><label for="jog01Button">0.1 mm</label>
+            <button class="button" id="jog001Button"/><label for="jog001Button">0.01 mm</label>
+        </div>
+        <div>
+            <button class="button" id="jogForwardButton">Forward</button>
+            <button class="button" id="jogBackwardButton">Backward</button>
+        </div>
         <div id="stackProperties">
-            <div><span>Begin: </span><input id="beginInput"></input></div>
-            <div><span>End: </span><input id="endInput"></input></div>
-            <div><span>Steps: </span><input id="stepsInput"></input>
+            <div><span class="valueName">Begin: </span><input id="beginInput" class="valueField"></input></div>
+            <div><span class="valueName">End: </span><input id="endInput" class="valueField"></input></div>
+            <div><span class="valueName">Steps: </span><input id="stepsInput" class="valueField"></input>
             </div>
         <div id="stackButtons">
             <button class="button" onclick="myFunction()">Toggle dark mode</button>
