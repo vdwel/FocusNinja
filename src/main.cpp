@@ -23,7 +23,7 @@ int stepCount = 0;
 #ifdef ACCESSPOINT_MODE
   char ssid[19];
   //const char *ssid = "FocusNinja0001";
-  const char *password = "FocusNinja";
+  const char *password = "focusninja";
 #else
   const char *ssid = "GF_Guest";
   const char *password = "gevoelsfotografie";

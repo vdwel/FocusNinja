@@ -61,7 +61,7 @@ bool FocusNinjaControl::isMoving()
 void FocusNinjaControl::releaseShutter()
 {
     digitalWrite(PIN_CAMERA_RELEASE, HIGH);
-    delayMicroseconds(20000);
+    delayMicroseconds(triggerTime);
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
 }
 
@@ -69,9 +69,9 @@ void FocusNinjaControl::stateMachine(){
     switch(photoState){
         case STATE_TAKE_PHOTOS :
             if (not isMoving()){ 
-                delayMicroseconds(500000);
+                delayMicroseconds(shutterDelay);
                 releaseShutter();
-                delayMicroseconds(500000);
+                delayMicroseconds(shutterAfterDelay);
                 if (stepCount == numberOfSteps){
                     photoState = STATE_IDLE;
                 } else {

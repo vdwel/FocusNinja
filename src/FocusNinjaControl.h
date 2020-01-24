@@ -32,6 +32,10 @@ public:
     float jogSize = 1;
     int numberOfSteps = 0;
     int stepCount = 0;
+    int shutterDelay = 2000000;
+    int shutterAfterDelay = 1000000;
+    int triggerTime = 80000;
+
 
     //Initialization code
     FocusNinjaControl();
