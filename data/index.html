@@ -8,6 +8,7 @@
     <script language="javascript" type="text/javascript">
 
         var url = "ws://" + window.location.hostname + ":1337/";
+        var currentTab;
         var output;
         var homeButton;
         var goButton;
@@ -28,6 +29,8 @@
         var jogSize;
 
         function init() {
+            currentTab = document.getElementById("moveTab");
+
             output = document.getElementById("output");
             positionSpan = document.getElementById("position");
 
@@ -75,6 +78,12 @@
 
             // Connect to WebSocket server
             wsConnect(url);
+        }
+
+        function showTab(name) {
+            currentTab.style.display = "none";
+            currentTab = document.getElementById(name);
+            currentTab.style.display = "block";
         }
 
         function log(s) {
@@ -246,62 +255,86 @@
 <body>
 
     <div>
-    <nav role="navigation">
-        <div id="menuToggle">
+        <nav role="navigation">
+            <div id="menuToggle">
 
-          <input type="checkbox" />
-          <span></span>
-          <span></span>
-          <span></span>
-          
-          <ul id="menu">
-            <a href="settings.html"><li>Settings</li></a>
-            <a href="update.html"><li>Update</li></a>
-          </ul>
-        </div>
-    </nav>
-    </div>
-    
+                <input type="checkbox" />
+                <span></span>
+                <span></span>
+                <span></span>
 
-    <div id="output"></div>
-    <div>Position: <span id="position">unknown</span></div>
-    <div id="stack">
-        <div id="stackButtons">
-            <button class="button" id="homeButton">Home</button>
-            <button class="button" id="goButton">Go</button>
-            <button class="button" id="stopButton">Stop</button>
-        </div>
-        <div>
-            <button class="button" id="markBeginButton">Begin here</button>
-            <button class="button" id="markEndButton">End here</button>
-        </div>
-        <div>
-            <button class="button" id="jog10Button"/><label for="jog10Button">10 mm</label>
-            <button class="button" id="jog1Button"/><label for="jog1Button">1 mm</label>
-            <button class="button" id="jog01Button"/><label for="jog01Button">0.1 mm</label>
-            <button class="button" id="jog001Button"/><label for="jog001Button">0.01 mm</label>
-        </div>
-        <div>
-            <button class="button" id="jogForwardButton">Forward</button>
-            <button class="button" id="jogBackwardButton">Backward</button>
-        </div>
-        <div id="stackProperties">
-            <div><span class="valueName">Begin: </span><input id="beginInput" class="valueField"></input></div>
-            <div><span class="valueName">End: </span><input id="endInput" class="valueField"></input></div>
-            <div><span class="valueName">Steps: </span><input id="stepsInput" class="valueField"></input>
+                <ul id="menu">
+                    <a href="#" onclick="showTab('moveTab');">
+                        <li>Move</li>
+                    </a>
+                    <a href="#" onclick="showTab('settingsTab');">
+                        <li>Settings</li>
+                    </a>
+                    <a href="#" onclick="showTab('updateTab');">
+                        <li>Update</li>
+                    </a>
+                </ul>
             </div>
-        <div id="stackButtons">
-            <button class="button" onclick="myFunction()">Toggle dark mode</button>
+        </nav>
+    </div>
 
-            <script>
-                function myFunction() {
-                   var element = document.body;
-                   element.classList.toggle("dark-mode");
-        
-                }
-            </script>
+    <div id="moveTab">
+        <h2>Move</h2>
+        <div id="output"></div>
+        <div>Position: <span id="position">unknown</span></div>
+        <div id="stack">
+            <div id="stackButtons">
+                <button class="button" id="homeButton">Home</button>
+                <button class="button" id="goButton">Go</button>
+                <button class="button" id="stopButton">Stop</button>
+            </div>
+            <div>
+                <button class="button" id="markBeginButton">Begin here</button>
+                <button class="button" id="markEndButton">End here</button>
+            </div>
+            <div>
+                <button class="button" id="jog10Button" /><label for="jog10Button">10 mm</label>
+                <button class="button" id="jog1Button" /><label for="jog1Button">1 mm</label>
+                <button class="button" id="jog01Button" /><label for="jog01Button">0.1 mm</label>
+                <button class="button" id="jog001Button" /><label for="jog001Button">0.01 mm</label>
+            </div>
+            <div>
+                <button class="button" id="jogForwardButton">Forward</button>
+                <button class="button" id="jogBackwardButton">Backward</button>
+            </div>
+            <div id="stackProperties">
+                <div><span class="valueName">Begin: </span><input id="beginInput" class="valueField"></input> mm</div>
+                <div><span class="valueName">End: </span><input id="endInput" class="valueField"></input> mm</div>
+                <div><span class="valueName">Steps: </span><input id="stepsInput" class="valueField"></input></div>
+                <div id="stackButtons">
+                    <button class="button" onclick="myFunction()">Toggle dark mode</button>
+
+                    <script>
+                        function myFunction() {
+                            var element = document.body;
+                            element.classList.toggle("dark-mode");
+
+                        }
+                    </script>
+                </div>
+            </div>
         </div>
+    </div>
+    <div id="settingsTab" style="display: none;">
+        <h2>Settings</h2>
+        <div>
+            <h3>Timing</h3>
+            <div><span class="valueName">Before: </span><input id="beforeInput" class="valueField"></input> ms</div>
+            <div><span class="valueName">After: </span><input id="afterInput" class="valueField"></input> ms</div>
+            <div><span class="valueName">Trigger: </span><input id="durationInput" class="valueField"></input> ms</div>
         </div>
+    </div>
+    <div id="updateTab" style="display: none;">
+        <h2>Update</h2>
+        <form method='POST' action='/doUpdate' enctype='multipart/form-data'>
+            <input type='file' name='update'>
+            <input type='submit' value='Update'>
+        </form>
     </div>
 </body>
 
