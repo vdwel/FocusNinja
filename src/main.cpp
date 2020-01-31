@@ -221,12 +221,12 @@ void setup()
 
   preferences.begin("ninja", false);
 
-  focusNinja.shutterDelay = preferences.getInt("shutterDelay", 2000000);
-  focusNinja.shutterAfterDelay = preferences.getInt("afterDelay", 1000000);
-  focusNinja.triggerTime = preferences.getInt("triggerTime", 80000);
+  focusNinja.shutterDelay = preferences.getInt("sd", 2000000);
+  focusNinja.shutterAfterDelay = preferences.getInt("ad", 1000000);
+  focusNinja.triggerTime = preferences.getInt("tt", 80000);
 
   preferences.end();
-  
+
   sprintf(ssid,"FocusNinja-%4x",(uint32_t)chipid);
 
   if (!SPIFFS.begin(true))
