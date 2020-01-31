@@ -7,6 +7,7 @@
 #include "FocusNinjaControl.h"
 #include <Update.h>
 #include <ESPmDNS.h>
+#include <Preferences.h>
 
 #define ACCESSPOINT_MODE
 
@@ -19,6 +20,8 @@ float startPosition = 20;
 float stepSizemm = 0.5;
 int numberOfSteps = 50;
 int stepCount = 0;
+
+Preferences preferences;
 
 #ifdef ACCESSPOINT_MODE
   char ssid[19];
@@ -215,6 +218,15 @@ void setup()
 {
   Serial.begin(115200);
   focusNinja.setLogger(&report);
+
+  preferences.begin("ninja", false);
+
+  focusNinja.shutterDelay = preferences.getInt("shutterDelay", 2000000);
+  focusNinja.shutterAfterDelay = preferences.getInt("afterDelay", 1000000);
+  focusNinja.triggerTime = preferences.getInt("triggerTime", 80000);
+
+  preferences.end();
+  
   sprintf(ssid,"FocusNinja-%4x",(uint32_t)chipid);
 
   if (!SPIFFS.begin(true))
