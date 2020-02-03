@@ -10,10 +10,13 @@
 #include <Preferences.h>
 
 #define ACCESSPOINT_MODE
+#define PREF_REPORT_LENGTH 32
+#define MAX_PAYLOAD_SIZE 255
+#define PREFERENCES_NAME "ninja"
 
 FocusNinjaControl focusNinja;
 int state = 0;
-uint64_t chipid=ESP.getEfuseMac();
+uint64_t chipid = ESP.getEfuseMac();
 
 //Test parameters
 float startPosition = 20;
@@ -24,12 +27,12 @@ int stepCount = 0;
 Preferences preferences;
 
 #ifdef ACCESSPOINT_MODE
-  char ssid[19];
-  //const char *ssid = "FocusNinja0001";
-  const char *password = "focusninja";
+char ssid[19];
+//const char *ssid = "FocusNinja0001";
+const char *password = "focusninja";
 #else
-  const char *ssid = "GF_Guest";
-  const char *password = "gevoelsfotografie";
+const char *ssid = "GF_Guest";
+const char *password = "gevoelsfotografie";
 #endif
 
 AsyncWebServer server = AsyncWebServer(80);
@@ -48,15 +51,47 @@ void report(const char *buf)
   }
 }
 
+void reportIntPreference(const char *name)
+{
+  char buf[PREF_REPORT_LENGTH + 1]; // extra for terminating 0
+
+  preferences.begin(PREFERENCES_NAME, true);
+
+  uint32_t value = preferences.getUInt(name);
+  preferences.end();
+
+  Serial.printf("Reporting preference %s: %d\r\n", name, value);
+
+  snprintf(buf, PREF_REPORT_LENGTH, "pref i %s %d", name, value);
+  report(buf);
+}
+
 // Callback: receiving any WebSocket message
 void onWebSocketEvent(uint8_t client_num,
                       WStype_t type,
                       uint8_t *payload,
                       size_t length)
 {
-  String command = String((char *)payload);
   float beginPosition, endPosition, jogSize;
   int steps;
+
+  // since there is no guarantee that payload is terminated by 0,
+  // we copy it into a buffer that we terminate with 0 ourselves
+  char buffer[MAX_PAYLOAD_SIZE + 1];
+
+  memcpy(buffer, payload, length);
+
+  if (length < MAX_PAYLOAD_SIZE)
+  {
+    buffer[length] = 0;
+  }
+  else
+  {
+    buffer[MAX_PAYLOAD_SIZE] = 0;
+  }
+
+  // now the buffer is 0-terminated, so this will be fine.
+  String command = String(buffer);
 
   switch (type)
   {
@@ -81,7 +116,7 @@ void onWebSocketEvent(uint8_t client_num,
   case WStype_TEXT:
 
     // Print out raw message
-    Serial.printf("[%u] Received text: %s\n", client_num, payload);
+    Serial.printf("[%u] Received text: %s\n", client_num, command.c_str());
 
     if (command.startsWith("stop"))
     {
@@ -90,18 +125,23 @@ void onWebSocketEvent(uint8_t client_num,
     else if (command.startsWith("home"))
     {
       focusNinja.homeCarriage();
-    } 
+    }
     else if (command.startsWith("go"))
     {
-      if (sscanf((char*)payload, "go %f %f %d", &beginPosition, &endPosition, &steps) == 3)
+      if (sscanf(command.c_str(), "go %f %f %d", &beginPosition, &endPosition, &steps) == 3)
       {
+        // refresh all settings
+        focusNinja.shutterDelay = preferences.getUInt("sd", 2000000);
+        focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000000);
+        focusNinja.triggerTime = preferences.getUInt("tt", 80000);
+
         focusNinja.takePhotos(beginPosition, endPosition, steps);
         Serial.printf("Go from %f to %f in %d steps.\r\n", beginPosition, endPosition, steps);
-      }    
+      }
     }
     else if (command.startsWith("jog "))
     {
-      if (sscanf((char*)payload, "jog %f", &jogSize) == 1)
+      if (sscanf(command.c_str(), "jog %f", &jogSize) == 1)
       {
         if (jogSize < 0)
         {
@@ -111,8 +151,30 @@ void onWebSocketEvent(uint8_t client_num,
         {
           focusNinja.moveCarriage(jogSize, FORWARDS);
         }
-        
-      }  
+      }
+    }
+    else if (command.startsWith("pref i "))
+    {
+      uint32_t pref_value;
+      char name[3];
+
+      if (9 == command.length()) // length of "pref i XX"
+      {
+        // no value, just return it
+        reportIntPreference(command.substring(7).c_str());
+      }
+      else if (sscanf(command.c_str(), "pref i %2s %u", name, &pref_value) == 2)
+      {
+        preferences.begin(PREFERENCES_NAME, false);
+
+        preferences.putUInt(name, pref_value);
+
+        preferences.end();
+      }
+      else
+      {
+        Serial.printf("Unknown preferences: %s\r\n", command.c_str());
+      }
     }
     break;
 
@@ -123,6 +185,7 @@ void onWebSocketEvent(uint8_t client_num,
   case WStype_FRAGMENT_BIN_START:
   case WStype_FRAGMENT:
   case WStype_FRAGMENT_FIN:
+    Serial.printf("Got some other websocket value: %d\r\n", type);
   default:
     break;
   }
@@ -154,28 +217,36 @@ void onUpdateRequest(AsyncWebServerRequest *request)
   request->send(SPIFFS, "/update.html", "text/html");
 }
 
-void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
-  if (!index){
+void handleDoUpdate(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  if (!index)
+  {
     Serial.println("Update");
     // if filename includes spiffs, update the spiffs partition
     int cmd = (filename.indexOf("spiffs") > -1) ? U_SPIFFS : U_FLASH;
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd))
+    {
       Update.printError(Serial);
     }
   }
 
-  if (Update.write(data, len) != len) {
+  if (Update.write(data, len) != len)
+  {
     Update.printError(Serial);
   }
 
-  if (final) {
+  if (final)
+  {
     AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
-    response->addHeader("Refresh", "20");  
+    response->addHeader("Refresh", "20");
     response->addHeader("Location", "/");
     request->send(response);
-    if (!Update.end(true)){
+    if (!Update.end(true))
+    {
       Update.printError(Serial);
-    } else {
+    }
+    else
+    {
       Serial.println("Update complete");
       Serial.flush();
       ESP.restart();
@@ -201,14 +272,17 @@ void connectWifi()
 }
 
 //This loop runs on the second core
-void loop2(){
+void loop2()
+{
   //report position every 0.5 seconds
   delayMicroseconds(100000);
   focusNinja.reportPosition();
 }
 
-void coreTask0(void * pvParameters){
-  while(true){
+void coreTask0(void *pvParameters)
+{
+  while (true)
+  {
     vTaskDelay(10);
     loop2();
   }
@@ -219,15 +293,19 @@ void setup()
   Serial.begin(115200);
   focusNinja.setLogger(&report);
 
-  preferences.begin("ninja", false);
+  preferences.begin(PREFERENCES_NAME, false);
 
-  focusNinja.shutterDelay = preferences.getInt("sd", 2000000);
-  focusNinja.shutterAfterDelay = preferences.getInt("ad", 1000000);
-  focusNinja.triggerTime = preferences.getInt("tt", 80000);
+  focusNinja.shutterDelay = preferences.getUInt("sd", 2000000);
+  focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000000);
+  focusNinja.triggerTime = preferences.getUInt("tt", 80000);
+
+  preferences.putUInt("sd", focusNinja.shutterDelay);
+  preferences.putUInt("ad", focusNinja.shutterAfterDelay);
+  preferences.putUInt("tt", focusNinja.triggerTime);
 
   preferences.end();
 
-  sprintf(ssid,"FocusNinja-%4x",(uint32_t)chipid);
+  sprintf(ssid, "FocusNinja-%4x", (uint32_t)chipid);
 
   if (!SPIFFS.begin(true))
   {
@@ -239,22 +317,21 @@ void setup()
   server.on("/style.css", onStyleRequest);
   server.on("/update.html", onUpdateRequest);
   server.on("/doUpdate", HTTP_POST,
-    [](AsyncWebServerRequest *request) {},
-    [](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data,
-                  size_t len, bool final) {handleDoUpdate(request, filename, index, data, len, final);}
-  );
+            [](AsyncWebServerRequest *request) {},
+            [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+               size_t len, bool final) { handleDoUpdate(request, filename, index, data, len, final); });
   server.begin();
   webSocket.begin();
   MDNS.begin("focusninja");
-  
+
   xTaskCreatePinnedToCore(
-                    coreTask0,   // Function to implement the task 
-                    "coreTask0", // Name of the task
-                    10000,      // Stack size in words
-                    NULL,       // Task input parameter
-                    0,          // Priority of the task
-                    NULL,       // Task handle.
-                    0);  // Core where the task should run
+      coreTask0,   // Function to implement the task
+      "coreTask0", // Name of the task
+      10000,       // Stack size in words
+      NULL,        // Task input parameter
+      0,           // Priority of the task
+      NULL,        // Task handle.
+      0);          // Core where the task should run
 
   focusNinja.homeCarriage();
 }

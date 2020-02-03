@@ -27,6 +27,10 @@
         var jogBackwardButton;
         var selectedJogButton;
         var jogSize;
+        var beforeInput;
+        var afterInput;
+        var durationInput;
+        var prefInputs = {};
 
         function init() {
             currentTab = document.getElementById("moveTab");
@@ -71,6 +75,24 @@
             jogBackwardButton = document.getElementById("jogBackwardButton");
             jogBackwardButton.onclick = onJogBackwardButtonClicked;
 
+            beforeInput = document.getElementById("beforeInput");
+            beforeInput.oninput = onPrefChanged;
+            prefInputs["sd"] = beforeInput;            
+            beforeInput.prefName = "sd";
+            beforeInput.prefType = "i";
+
+            afterInput = document.getElementById("afterInput");
+            afterInput.oninput = onPrefChanged;
+            prefInputs["ad"] = afterInput;
+            afterInput.prefName = "ad";
+            afterInput.prefType = "i";
+
+            durationInput = document.getElementById("durationInput");
+            durationInput.oninput = onPrefChanged;
+            prefInputs["tt"] = durationInput;
+            durationInput.prefName = "tt";
+            durationInput.prefType = "i";
+
             // default jog size is 1 mm
             jogSize = 1.0;
             selectedJogButton = jog1Button;
@@ -114,6 +136,10 @@
             homeButton.disabled = false;
             goButton.disabled = false;
             stopButton.disabled = false;
+            websocket.send("pref i sd");
+            websocket.send("pref i ad");
+            websocket.send("pref i tt");
+            console.log("Requested preferences.");
         }
 
         // Called when the WebSocket connection is closed
@@ -133,7 +159,7 @@
 
         // Called when a message is received from the server
         function onMessage(evt) {
-
+            console.log("Got from websocket: " + evt.data);
             parts = evt.data.split(" ");
             switch (parts[0]) {
                 case "log":
@@ -142,6 +168,20 @@
                     break;
                 case "pos":
                     position.innerHTML = evt.data.slice(4);
+                    break;
+                case "pref":
+                    if (parts.length > 3) 
+                    {
+                        if (prefInputs[parts[2]] != undefined)
+                        {
+                            console.log("Setting preference " + parts[2] + " to " + parts[3]);
+                            prefInputs[parts[2]].value = parts[3];
+                        }
+                        else
+                        {
+                            console.log("Preference " + parts[2] + " not found.");
+                        }
+                    }
                     break;
                 default:
                     console.log("Unknown message: " + evt.data);
@@ -157,6 +197,9 @@
             doSend("home");
         }
 
+        function onPrefChanged(evt) {
+            doSend("pref " + evt.target.prefType + " "+ evt.target.prefName + " " + evt.target.value);
+        }
 
         function onGoButtonClicked(evt) {
             try {
