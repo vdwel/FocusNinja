@@ -29,7 +29,6 @@ public:
     float endPosition = 0;
     int steps = 0;
     float stepSizemm = 1;
-    float jogSize = 1;
     int numberOfSteps = 0;
     int stepCount = 0;
     int shutterDelay = 2000000;
