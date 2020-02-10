@@ -1,6 +1,8 @@
 #ifndef FOCUSNINJACONTROL_H
 #define FOCUSNINJACONTROL_H
 
+#include <Arduino.h>
+
 #define PIN_DIRECTION 19
 #define PIN_STEP 18
 #define PIN_ENDSTOP 32
@@ -27,13 +29,14 @@ public:
     int photoState = 0;
     float beginPosition = 0;
     float endPosition = 0;
-    int steps = 0;
+    uint32_t steps = 0;
     float stepSizemm = 1;
-    int numberOfSteps = 0;
-    int stepCount = 0;
-    int shutterDelay = 2000000;
-    int shutterAfterDelay = 1000000;
-    int triggerTime = 80000;
+    float jogSize = 1;
+    uint32_t numberOfSteps = 0;
+    uint32_t stepCount = 0;
+    uint32_t shutterDelay = 2000000;
+    uint32_t shutterAfterDelay = 1000000;
+    uint32_t triggerTime = 80000;
 
 
     //Initialization code

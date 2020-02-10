@@ -42,7 +42,8 @@ h1, h2 {
 .button-selected {
   font-style: italic;
   font-weight: bold;
-  background-color: white;
+  color: white;
+  background-color: darkgrey;
 }
 
 #stackProperties{
