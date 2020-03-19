@@ -12,149 +12,250 @@ FocusNinjaControl::FocusNinjaControl()
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
 }
 
-void FocusNinjaControl::takePhotos(float startPos, float endPos, int steps){
-    if (!homed){
-        homeCarriage();
-        return;
+void FocusNinjaControl::takePhotos(float startPos, float endPos, int steps)
+{
+    beginPosition = startPos / MILLIMETER_PER_STEP;
+    endPosition = endPos / MILLIMETER_PER_STEP;
+    remainingSteps = steps;
+    // first go to the start position
+    if (homed)
+    {
+        destinationPosition = beginPosition;
+
+        fixDestination();
+
+        if (destinationPosition > position)
+        {
+            setDirection(1);
+        }
+        else
+        {
+            setDirection(-1);
+        }
+
+        setState(MOVE_TO_SHOT);
     }
-    stepCount = 0;
-    numberOfSteps = steps;
-    stepSizemm = (endPos - startPos)/numberOfSteps;
-    beginPosition = (startPos - position);
-    if (beginPosition < 0){
-        beginPosition = beginPosition * -1;
-        moveCarriage(beginPosition, BACKWARDS);
-    } else {
-        moveCarriage(beginPosition, FORWARDS);
+    else
+    {
+        setDirection(-1);
+        setState(HOME_TO_START);
     }
-    photoState = STATE_TAKE_PHOTOS;
 }
 
 void FocusNinjaControl::moveCarriage(float millimeter, bool direction)
 {
-    int degreesToRotate = (millimeter / MILLIMETER_PER_ROTATION) * 360;
+
     if (direction == FORWARDS)
     {
-        carriageDirection = 1;
+        setDirection(1);
+        destinationPosition += millimeter / MILLIMETER_PER_STEP;
     }
     else
     {
-        carriageDirection = -1;
+        setDirection(-1);
+        destinationPosition -= millimeter / MILLIMETER_PER_STEP;
     }
-    rotateStepper(degreesToRotate, DEFAULT_SPEED, direction);
+
+    fixDestination();
+
+    state = MOVE_TO_IDLE;
 }
 
 //Home the carriage
 void FocusNinjaControl::homeCarriage()
 {
-    homed = false;
-    carriageDirection = -1;
-    rotateStepper(1, DEFAULT_SPEED, BACKWARDS);
+    setDirection(-1);
+    setState(HOME_TO_IDLE);
     log("log Homing.");
 }
 
 bool FocusNinjaControl::isMoving()
 {
-    return numberOfPulses > 0;
+    return IDLE != state;
+}
+
+bool FocusNinjaControl::isHome()
+{
+    return LOW == digitalRead(PIN_ENDSTOP);
+}
+
+bool FocusNinjaControl::isDestinationReached()
+{
+    return (carriageDirection > 0 && position >= destinationPosition) ||
+           (carriageDirection < 0 && position <= destinationPosition) ||
+           (carriageDirection == 0);
+}
+
+void FocusNinjaControl::pressShutter()
+{
+    log("log Shutter pressed.");
+    digitalWrite(PIN_CAMERA_RELEASE, HIGH);
 }
 
 void FocusNinjaControl::releaseShutter()
 {
-    digitalWrite(PIN_CAMERA_RELEASE, HIGH);
-    delayMicroseconds(triggerTime);
+    log("log Shutter released.");
     digitalWrite(PIN_CAMERA_RELEASE, LOW);
 }
 
-void FocusNinjaControl::stateMachine(){
-    switch(photoState){
-        case STATE_TAKE_PHOTOS :
-            if (not isMoving()){ 
-                delayMicroseconds(shutterDelay);
-                releaseShutter();
-                delayMicroseconds(shutterAfterDelay);
-                if (stepCount == numberOfSteps){
-                    photoState = STATE_IDLE;
-                } else {
-                    moveCarriage(stepSizemm, FORWARDS);
-                    stepCount += 1; 
-                }      
+void FocusNinjaControl::stateMachine()
+{
+    switch (state)
+    {
+    case IDLE:
+        // nothing to do, remain in state
+        destinationPosition = position;
+        break;
+    case HOME_TO_IDLE:
+        if (isHome())
+        {
+            log("log Homed.");
+            carriageDirection = 0;
+            homed = true;
+            reportPosition();
+            setState(IDLE);
+        }
+        else
+        {
+            step();
+        }
+        break;
+    case HOME_TO_START:
+        if (isHome())
+        {
+            // move to begin
+            homed = true;
+            position = 0;
+            destinationPosition = beginPosition;
+            fixDestination();
+            setDirection(1);
+            reportPosition();
+            setState(MOVE_TO_SHOT);
+        }
+        else
+        {
+            step();
+        }
+
+        break;
+    case MOVE_TO_IDLE:
+        if (isDestinationReached())
+        {
+            carriageDirection = 0;
+            reportPosition();
+            setState(IDLE);
+        }
+        else
+        {
+            step();
+        }
+        break;
+    case MOVE_TO_SHOT:
+        if (position == destinationPosition)
+        {
+            // destination reached
+            carriageDirection = 0;
+            timeout_start = millis();
+            timeout_wait = shutterDelay;
+            reportPosition();
+            setState(WAIT_BEFORE_SHUTTER);
+        }
+        else
+        {
+            step();
+        }
+        break;
+    case WAIT_BEFORE_SHUTTER:
+        if (millis() - timeout_start > timeout_wait)
+        {
+            this->pressShutter();
+            timeout_start = millis();
+            timeout_wait = triggerTime;
+        }
+        break;
+
+    case SHUTTER_DOWN:
+        if (millis() - timeout_start > timeout_wait)
+        {
+            this->releaseShutter();
+            timeout_start = millis();
+            timeout_wait = shutterAfterDelay;
+        }
+        break;
+
+    case WAIT_AFTER_SHUTTER:
+        if (millis() - timeout_start > timeout_wait)
+        {
+            // move to next positions
+            if (remainingSteps > 0)
+            {
+                setDirection(1);
+                destinationPosition += (endPosition - position) / remainingSteps;
+                fixDestination();
+                setState(MOVE_TO_SHOT);
             }
-            break;
-  }
+            else
+            {
+                setState(IDLE);
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+void FocusNinjaControl::setState(FocusState s)
+{
+    Serial.printf("Set state to %d\r\n", s);
+    state = s;
+}
+
+void FocusNinjaControl::fixDestination(void)
+{
+    // generic check
+    if (homed)
+    // if not homed, positions do not make sense
+    {
+        if (destinationPosition > MAX_POSITION)
+        {
+            destinationPosition = MAX_POSITION;
+        }
+        else if (destinationPosition < 0)
+        {
+            destinationPosition = 0;
+        }
+    }
 }
 
 void FocusNinjaControl::stop()
 {
-    numberOfPulses = 0;
     carriageDirection = 0;
+    setState(IDLE);
     log("log Stopped.");
 }
 
-
-//This needs to be called from the loop
-void FocusNinjaControl::motorControl()
+void FocusNinjaControl::setDirection(int direction)
 {
-    stateMachine();
-    if (numberOfPulses == 0)
-    {
-        // not moving in any direction
-        digitalWrite(LED_BUILTIN, LOW);
-        digitalWrite(PIN_STATUS_LED, LOW);
-        return;
-    }
-    digitalWrite(LED_BUILTIN, HIGH);
-    digitalWrite(PIN_STATUS_LED, HIGH);
-    
-    if (homed)
-    {
-        //Minumum position reached, stop moving
-        if (position <= 0 and carriageDirection == -1)
-        {
-            numberOfPulses = 0;
-        }
-        //Maximum position reached, stop moving
-        if (position >= MAX_POSITION and carriageDirection == 1)
-        {
-            numberOfPulses = 0;
-            log("log Reached the end.");
-        }
-    }
-    //Move the carriage
-    if (numberOfPulses > 0)
-    {
-        if (homed)
-        {
-            numberOfPulses -= 1;
-        }
-        position = position + (mmPerStep * carriageDirection);
-        //reportPosition();
-        digitalWrite(PIN_STEP, HIGH);
-        delayMicroseconds(pulseWidthMs);
-        digitalWrite(PIN_STEP, LOW);
-        delayMicroseconds(pulseWidthMs);
-    }
-
-    bool endStop = digitalRead(PIN_ENDSTOP);
-
-    //If homing, stop when endstop triggers
-    if ((endStop == LOW) && !homed)
-    {
-        homed = true;
-        position = 0;
-        numberOfPulses = 0;
-        carriageDirection = 0;
-        reportPosition();
-        log("log Homed.");
-    }
+    carriageDirection = direction;
+    Serial.printf("Direction %d\r\n", direction);
+    digitalWrite(PIN_DIRECTION, -1 == carriageDirection);
 }
 
-//Basic function to rotate the steppermotor
-void FocusNinjaControl::rotateStepper(float degrees, int rotationSpeed, bool rotationDirection)
+void FocusNinjaControl::step()
 {
-    numberOfPulses = MICROSTEPPING * degrees / DEGREES_PER_STEP;
-    //pulseWidthMs = (1000000 / (2 * DEGREES_PER_STEP * 360 / DEGREES_PER_STEP)) / rotationSpeed;
-    pulseWidthMs = 1000000/((360 / DEGREES_PER_STEP) * MICROSTEPPING * 2)/rotationSpeed;
-    digitalWrite(PIN_DIRECTION, rotationDirection);
+    digitalWrite(PIN_STEP, HIGH);
+    delayMicroseconds(pulseWidthMs);
+    digitalWrite(PIN_STEP, LOW);
+    delayMicroseconds(pulseWidthMs);
+    position += carriageDirection;
+    if (millis() - lastStepReport > STEP_REPORT_INTERVAL_MILLIS)
+    {
+        lastStepReport = millis();
+        Serial.printf("Position %d, stepped %d\r\n", position, carriageDirection);
+        reportPosition();
+    }
 }
 
 void FocusNinjaControl::setLogger(void (*fun_ptr)(const char *))
@@ -164,6 +265,8 @@ void FocusNinjaControl::setLogger(void (*fun_ptr)(const char *))
 
 void FocusNinjaControl::log(const char *s)
 {
+    Serial.printf("Log: %s\r\n", s);
+
     if (logger)
     {
         logger(s);
@@ -174,6 +277,6 @@ void FocusNinjaControl::reportPosition()
 {
     char buf[32];
 
-    snprintf(buf, 32, "pos %f", position);
+    snprintf(buf, 32, "pos %f", position * MILLIMETER_PER_STEP);
     log(buf);
 }
