@@ -131,9 +131,11 @@ void onWebSocketEvent(uint8_t client_num,
       if (sscanf(command.c_str(), "go %f %f %d", &beginPosition, &endPosition, &steps) == 3)
       {
         // refresh all settings
+        preferences.begin(PREFERENCES_NAME, true);
         focusNinja.shutterDelay = preferences.getUInt("sd", 2000000);
         focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000000);
         focusNinja.triggerTime = preferences.getUInt("tt", 80000);
+        preferences.end();
 
         focusNinja.takePhotos(beginPosition, endPosition, steps);
         Serial.printf("Go from %f to %f in %d steps.\r\n", beginPosition, endPosition, steps);

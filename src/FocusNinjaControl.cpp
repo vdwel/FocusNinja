@@ -111,6 +111,7 @@ void FocusNinjaControl::stateMachine()
         {
             log("log Homed.");
             carriageDirection = 0;
+            position = 0;
             homed = true;
             reportPosition();
             setState(IDLE);
@@ -171,6 +172,7 @@ void FocusNinjaControl::stateMachine()
             this->pressShutter();
             timeout_start = millis();
             timeout_wait = triggerTime;
+            setState(SHUTTER_DOWN);
         }
         break;
 
@@ -180,6 +182,7 @@ void FocusNinjaControl::stateMachine()
             this->releaseShutter();
             timeout_start = millis();
             timeout_wait = shutterAfterDelay;
+            setState(WAIT_AFTER_SHUTTER);
         }
         break;
 
@@ -193,6 +196,7 @@ void FocusNinjaControl::stateMachine()
                 destinationPosition += (endPosition - position) / remainingSteps;
                 fixDestination();
                 setState(MOVE_TO_SHOT);
+                remainingSteps -= 1;
             }
             else
             {
