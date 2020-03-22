@@ -12,7 +12,7 @@
 #define ACCESSPOINT_MODE
 #define PREF_REPORT_LENGTH 32
 #define MAX_PAYLOAD_SIZE 255
-#define PREFERENCES_NAME "ninja"
+#define PREFERENCES_NAME "focusninja"
 
 FocusNinjaControl focusNinja;
 int state = 0;
@@ -27,7 +27,7 @@ int stepCount = 0;
 Preferences preferences;
 
 #ifdef ACCESSPOINT_MODE
-char ssid[19];
+char ssid[20]={0};
 //const char *ssid = "FocusNinja0001";
 const char *password = "focusninja";
 #else
@@ -258,6 +258,7 @@ void connectWifi()
 {
 #ifdef ACCESSPOINT_MODE
   WiFi.softAP(ssid, password);
+  //WiFi.softAP("FocusNinjaSSiD", "focusninja");
 #else
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
@@ -265,10 +266,11 @@ void connectWifi()
     delay(500);
     Serial.print(".");
   }
-#endif
   Serial.println(" started WiFi.");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
+#endif
+
 }
 
 //This loop runs on the second core
@@ -291,6 +293,7 @@ void coreTask0(void *pvParameters)
 void setup()
 {
   Serial.begin(115200);
+  
   focusNinja.setLogger(&report);
 
   preferences.begin(PREFERENCES_NAME, false);
@@ -306,12 +309,14 @@ void setup()
   preferences.end();
 
   sprintf(ssid, "FocusNinja-%4x", (uint32_t)chipid);
+  //sprintf(ssid, "FocusNinja");
 
   if (!SPIFFS.begin(true))
   {
     Serial.println("Error mounting SPIFFS");
   }
   connectWifi();
+  
   webSocket.onEvent(onWebSocketEvent);
   server.on("/", onIndexRequest);
   server.on("/style.css", onStyleRequest);
@@ -334,6 +339,7 @@ void setup()
       0);          // Core where the task should run
 
   focusNinja.homeCarriage();
+  
 }
 
 void loop()
