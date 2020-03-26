@@ -27,7 +27,7 @@ int stepCount = 0;
 Preferences preferences;
 
 #ifdef ACCESSPOINT_MODE
-char ssid[20]={0};
+char ssid[20] = {0};
 //const char *ssid = "FocusNinja0001";
 const char *password = "focusninja";
 #else
@@ -42,6 +42,14 @@ uint8_t active_sockets[256] = {0};
 
 void report(const char *buf)
 {
+#ifndef ACCESSPOINT_MODE
+  // if we are not in access point mode,
+  // we should try to reconnect if we lost the wifi
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    connectWifi();
+  }
+#endif
   for (int i = 0; i < 256; i++)
   {
     if (active_sockets[i])
@@ -272,13 +280,12 @@ void connectWifi()
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
 #endif
-
 }
 
 void setup()
 {
   Serial.begin(115200);
-  
+
   focusNinja.setLogger(&report);
 
   preferences.begin(PREFERENCES_NAME, false);
@@ -301,21 +308,21 @@ void setup()
     Serial.println("Error mounting SPIFFS");
   }
   connectWifi();
-  
+
   webSocket.onEvent(onWebSocketEvent);
   server.on("/", onIndexRequest);
   server.on("/style.css", onStyleRequest);
   server.on("/update.html", onUpdateRequest);
-  server.on("/doUpdate", HTTP_POST,
-            [](AsyncWebServerRequest *request) {},
-            [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
-               size_t len, bool final) { handleDoUpdate(request, filename, index, data, len, final); });
+  server.on(
+      "/doUpdate", HTTP_POST,
+      [](AsyncWebServerRequest *request) {},
+      [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
+         size_t len, bool final) { handleDoUpdate(request, filename, index, data, len, final); });
   server.begin();
   webSocket.begin();
   MDNS.begin("focusninja");
 
   focusNinja.homeCarriage();
-  
 }
 
 void loop()
