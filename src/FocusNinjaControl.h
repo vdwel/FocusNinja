@@ -14,7 +14,7 @@
 #define MILLIMETER_PER_ROTATION 2
 #define MILLIMETER_PER_STEP (MILLIMETER_PER_ROTATION * DEGREES_PER_STEP / (MICROSTEPPING * 360))
 #define DEFAULT_SPEED 2                                      // rotations per second
-#define MAX_POSITION_MM 130                                  // max position in mm
+#define MAX_POSITION_MM 125                                  // max position in mm
 #define MAX_POSITION (MAX_POSITION_MM / MILLIMETER_PER_STEP) // max position in steps
 #define STEP_REPORT_INTERVAL_MILLIS 500                      // milliseconds between reports of position while moving
 #define FORWARDS false

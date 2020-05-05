@@ -132,9 +132,9 @@ void onWebSocketEvent(uint8_t client_num,
       {
         // refresh all settings
         preferences.begin(PREFERENCES_NAME, true);
-        focusNinja.shutterDelay = preferences.getUInt("sd", 2000000);
-        focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000000);
-        focusNinja.triggerTime = preferences.getUInt("tt", 80000);
+        focusNinja.shutterDelay = preferences.getUInt("sd", 2000);
+        focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000);
+        focusNinja.triggerTime = preferences.getUInt("tt", 80);
         preferences.end();
 
         focusNinja.takePhotos(beginPosition, endPosition, steps);
