@@ -290,9 +290,9 @@ void setup()
 
   preferences.begin(PREFERENCES_NAME, false);
 
-  focusNinja.shutterDelay = preferences.getUInt("sd", 2000000);
-  focusNinja.shutterAfterDelay = preferences.getUInt("ad", 1000000);
-  focusNinja.triggerTime = preferences.getUInt("tt", 80000);
+  focusNinja.shutterDelay = preferences.getUInt("sd", 3000);
+  focusNinja.shutterAfterDelay = preferences.getUInt("ad", 3000);
+  focusNinja.triggerTime = preferences.getUInt("tt", 80);
 
   preferences.putUInt("sd", focusNinja.shutterDelay);
   preferences.putUInt("ad", focusNinja.shutterAfterDelay);
