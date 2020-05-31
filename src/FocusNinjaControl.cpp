@@ -32,12 +32,13 @@ void FocusNinjaControl::takePhotos(float startPos, float endPos, int steps)
         {
             setDirection(-1);
         }
-
+        log("log Move to shot.");
         setState(MOVE_TO_SHOT);
     }
     else
     {
         setDirection(-1);
+        log("log Homing.");
         setState(HOME_TO_START);
     }
 }
@@ -104,9 +105,11 @@ void FocusNinjaControl::stateMachine()
     {
     case IDLE:
         // nothing to do, remain in state
+        digitalWrite(PIN_STATUS_LED, LOW);
         destinationPosition = position;
         break;
     case HOME_TO_IDLE:
+        digitalWrite(PIN_STATUS_LED, HIGH);
         if (isHome())
         {
             log("log Homed.");
@@ -122,6 +125,7 @@ void FocusNinjaControl::stateMachine()
         }
         break;
     case HOME_TO_START:
+        digitalWrite(PIN_STATUS_LED, HIGH);
         if (isHome())
         {
             // move to begin
@@ -131,6 +135,7 @@ void FocusNinjaControl::stateMachine()
             fixDestination();
             setDirection(1);
             reportPosition();
+            log("log Moving.");
             setState(MOVE_TO_SHOT);
         }
         else
@@ -140,10 +145,12 @@ void FocusNinjaControl::stateMachine()
 
         break;
     case MOVE_TO_IDLE:
+        digitalWrite(PIN_STATUS_LED, HIGH);
         if (isDestinationReached())
         {
             carriageDirection = 0;
             reportPosition();
+            log("log Idle.");
             setState(IDLE);
         }
         else
@@ -152,6 +159,7 @@ void FocusNinjaControl::stateMachine()
         }
         break;
     case MOVE_TO_SHOT:
+        digitalWrite(PIN_STATUS_LED, HIGH);
         if (position == destinationPosition)
         {
             // destination reached
@@ -159,10 +167,17 @@ void FocusNinjaControl::stateMachine()
             timeout_start = millis();
             timeout_wait = shutterDelay;
             reportPosition();
+            log("log Waiting before shot.");
             setState(WAIT_BEFORE_SHUTTER);
         }
         else
         {
+            if (position > destinationPosition)
+            {
+                setDirection(-1);
+            } else {
+                setDirection(1);
+            }
             step();
         }
         break;
@@ -182,6 +197,7 @@ void FocusNinjaControl::stateMachine()
             this->releaseShutter();
             timeout_start = millis();
             timeout_wait = shutterAfterDelay;
+            log("log Waiting after shot.");
             setState(WAIT_AFTER_SHUTTER);
         }
         break;
@@ -192,14 +208,16 @@ void FocusNinjaControl::stateMachine()
             // move to next positions
             if (remainingSteps > 0)
             {
-                setDirection(1);
+                //setDirection(1);
                 destinationPosition += (endPosition - position) / remainingSteps;
                 fixDestination();
                 setState(MOVE_TO_SHOT);
+                log("log Moving.");
                 remainingSteps -= 1;
             }
             else
             {
+                log("log Idle.");
                 setState(IDLE);
             }
         }

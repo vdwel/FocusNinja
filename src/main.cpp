@@ -28,6 +28,8 @@ Preferences preferences;
 
 #ifdef ACCESSPOINT_MODE
 char ssid[20] = {0};
+//char password[20] = {0};
+//char *password;
 //const char *ssid = "FocusNinja0001";
 const char *password = "focusninja";
 #else
@@ -292,8 +294,8 @@ void setup()
 
   focusNinja.shutterDelay = preferences.getUInt("sd", 3000);
   focusNinja.shutterAfterDelay = preferences.getUInt("ad", 3000);
-  focusNinja.triggerTime = preferences.getUInt("tt", 80);
-
+  focusNinja.triggerTime = preferences.getUInt("tt", 200);
+  
   preferences.putUInt("sd", focusNinja.shutterDelay);
   preferences.putUInt("ad", focusNinja.shutterAfterDelay);
   preferences.putUInt("tt", focusNinja.triggerTime);
@@ -301,6 +303,7 @@ void setup()
   preferences.end();
 
   sprintf(ssid, "FocusNinja-%4x", (uint32_t)chipid);
+  //sprintf(password, "focusninja");
   //sprintf(ssid, "FocusNinja");
 
   if (!SPIFFS.begin(true))
